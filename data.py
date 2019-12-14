@@ -30,9 +30,9 @@ def read_instances(data_file_path: str,
     line_inc = 1 if test else 4
 
     ## TODO - remove this line
-    print('len', len(lines)) # 28784 - train # 3216 - validation
-    print("REMOVE THIS. YOU ARE LIMITING THE TOTAL NUMBER OF TRAINING AND VALIDATION LINES")
-    lines = lines[:500]
+    # print('len', len(lines)) # 28784 - train # 3216 - validation
+    # print("REMOVE THIS. YOU ARE LIMITING THE TOTAL NUMBER OF TRAINING AND VALIDATION LINES")
+    # lines = lines[:500]
 
 
     for idx in tqdm(range(0, len(lines), line_inc)):
