@@ -13,6 +13,7 @@ from data import read_instances, build_vocabulary, \
 from model import MyAdvancedModel
 
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train Model')
     parser.add_argument('--data-file', type=str, help="Location of data", default="./data/train.txt")

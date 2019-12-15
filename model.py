@@ -16,7 +16,7 @@ class MyBasicAttentiveBiGRU(models.Model):
         self.embeddings = tf.Variable(tf.random.normal((vocab_size, embed_dim)))
 
         model = models.Sequential()
-        forward_layer = layers.GRU(hidden_size, return_sequences=True) # TODO -emil - try other initializers
+        forward_layer = layers.GRU(hidden_size, return_sequences=True)
         backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True)
         model.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
                          input_shape=(5, 2*embed_dim))) 
@@ -83,14 +83,14 @@ class MyAdvancedModel(models.Model):
         self.embeddings = tf.Variable(tf.random.normal((vocab_size, embed_dim)))
 
         layer1 = models.Sequential()
-        forward_layer = layers.GRU(hidden_size, return_sequences=True) # TODO -emil - try other initializers
-        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True)
+        forward_layer = layers.GRU(hidden_size, return_sequences=True, dropout=0.3) # TODO -emil - try other initializers
+        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True, dropout=0.3)
         layer1.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
                          input_shape=(5, 2*embed_dim))) 
 
         layer2 = models.Sequential()
-        forward_layer = layers.GRU(hidden_size, return_sequences=True) # TODO -emil - try other initializers
-        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True)
+        forward_layer = layers.GRU(hidden_size, return_sequences=True, dropout=0.5) # TODO -emil - try other initializers
+        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True, dropout=0.5)
         layer2.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
                          input_shape=(5, 2*hidden_size))) 
 
@@ -98,9 +98,6 @@ class MyAdvancedModel(models.Model):
         self.layer2 = layer2
 
     def attn(self, rnn_outputs):
-        ### TODO(Students) START
-        # ...
-        ### TODO(Students) END
         
         ## rnn_outputs = bsz x seq_len x 256  - eqn 8 from the paper is not done
         H = tf.transpose(rnn_outputs, [0, 2, 1]) # bsz x 256 x seq_len
@@ -127,16 +124,18 @@ class MyAdvancedModel(models.Model):
         ### TODO(Students) START
         # ...
         ### TODO(Students) END
-
+        # print('training', training)
         tokens_mask = tf.cast(inputs!=0, tf.float32)
 
         x = tf.concat([word_embed, pos_embed], axis=2)
 
-        logits = self.layer1(x, mask=tokens_mask)
+        logits = self.layer1(x, mask=tokens_mask, training=training)
 
-        logits = self.layer2(logits, mask=tokens_mask)
+        logits1 = self.layer2(logits, mask=tokens_mask, training=training)
 
-        logits = self.attn(logits)
+        residual = logits + logits1
+
+        logits = self.attn(residual)
 
         logits = self.decoder(logits)
 
