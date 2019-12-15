@@ -79,6 +79,7 @@ class MyAdvancedModel(models.Model):
         self.num_classes = len(ID_TO_CLASS)
 
         self.decoder = layers.Dense(units=self.num_classes)
+        self.drop = layers.Dropout(0.3)
         self.omegas = tf.Variable(tf.random.normal((hidden_size*2, 1)))
         self.embeddings = tf.Variable(tf.random.normal((vocab_size, embed_dim)))
 
@@ -89,13 +90,27 @@ class MyAdvancedModel(models.Model):
                          input_shape=(5, 2*embed_dim))) 
 
         layer2 = models.Sequential()
+        forward_layer = layers.GRU(hidden_size, return_sequences=True, dropout=0.3) # TODO -emil - try other initializers
+        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True, dropout=0.3)
+        layer2.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
+                         input_shape=(5, 2*hidden_size))) 
+
+        layer3 = models.Sequential()
         forward_layer = layers.GRU(hidden_size, return_sequences=True, dropout=0.5) # TODO -emil - try other initializers
         backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True, dropout=0.5)
-        layer2.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
+        layer3.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
+                         input_shape=(5, 2*hidden_size))) 
+
+        layer4 = models.Sequential()
+        forward_layer = layers.GRU(hidden_size, return_sequences=True, dropout=0.5) # TODO -emil - try other initializers
+        backward_layer = layers.GRU(hidden_size, return_sequences=True, go_backwards=True, dropout=0.5)
+        layer4.add(layers.Bidirectional(forward_layer, backward_layer=backward_layer,
                          input_shape=(5, 2*hidden_size))) 
 
         self.layer1 = layer1
         self.layer2 = layer2
+        self.layer3 = layer3
+        self.layer4 = layer4
 
     def attn(self, rnn_outputs):
         
@@ -135,8 +150,17 @@ class MyAdvancedModel(models.Model):
 
         residual = logits + logits1
 
+        logits = self.layer3(residual, mask=tokens_mask, training=training)
+
+        logits1 = self.layer4(logits, mask=tokens_mask, training=training)
+
+        residual = logits + logits1
+
         logits = self.attn(residual)
 
-        logits = self.decoder(logits)
+        if training:
+            logits = self.drop(self.decoder(logits))
+        else:
+            logits = self.decoder(logits)
 
         return {'logits': logits}
